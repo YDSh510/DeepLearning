@@ -1,0 +1,160 @@
+CNN Example.
+Here Using default Cifar10 data set present in Keras Library. Data Set consiste of 10 classes and images need to be classified in these classes. automobile, bird, cat, deer, dog, frog, horse, ship,truck
+
+[44]
+import tensorflow as tf
+from tensorflow.keras import datasets, layers, models
+import matplotlib.pyplot as plt
+import numpy as np
+from tensorflow.keras import regularizers
+from tensorflow.keras.callbacks import EarlyStopping
+[45]
+(X_train, y_train), (X_test,y_test) = datasets.cifar10.load_data()
+[46]
+0s
+X_train.shape
+(50000, 32, 32, 3)
+[47]
+0s
+X_test.shape
+(10000, 32, 32, 3)
+[48]
+0s
+y_train.shape
+(50000, 1)
+[49]
+0s
+## for 1 D array - slice  [start:end:step]
+## for 2 D array - slice using [:,:] x,y
+y_train[:5]
+## y_train array is 2D, for our classification having 1D array is good enough. so we will convert this to now 1D array. 
+array([[6],
+       [9],
+       [9],
+       [4],
+       [1]], dtype=uint8)
+[77]
+## to have 1D array fromsay 2D use - reshape api in 2 ways - 1) either give correct count reshape(1,50000) 2) or use reshape(-1,)
+y_train = y_train.reshape(-1,)
+y_test = y_test.reshape(-1,)
+[78]
+classes = ["airplane","automobile","bird","cat","deer","dog","frog","horse","ship","truck"]
+[52]
+#Let's plot some images to see what they are
+def plot_sample(X,y, index):
+  plt.figure(figsize = (15,2))
+  plt.imshow(X[index])
+  plt.xlabel(classes[y[index]])
+  ## note y 2D array of shape (500,1) or y1 1D array of shape (1,500)
+  ## both will have same value at index say y[5]=y1[5]
+[53]
+0s
+plot_sample(X_train, y_train, 0)
+
+[54]
+0s
+plot_sample(X_train, y_train, 1)
+
+Normalization the training data into 0 to 1 range so divide by 255.
+[55]
+X_train = X_train / 255.0
+X_test =X_test / 255.0
+[58]
+cnn = models.Sequential([
+                         # Feature Extraction
+                         layers.Conv2D(filters=32, kernel_size=(3,3), activation='relu', input_shape=(32,32,3)),
+                         # Reduce the number of feature
+                         layers.MaxPooling2D((2,2)), ## window size 2x2
+                         
+                         layers.Conv2D(filters=64, kernel_size=(3,3), activation='relu'),
+                         #layers.Dropout(0.5),
+                         layers.MaxPooling2D((2,2)),
+                         # layer2 with L1-L2 with Regularizers
+                         layers.Flatten(),
+                         #layers.Dense(30, activation='relu', kernel_regularizar = regularizers.L1_L2(L1=0.01, L2=0.01),activity_regularizer = regularizers.L1_L2(L1=0.01, L2=0.01))
+                         
+                         layers.Dense(64, activation='relu'),
+                         layers.Dense(10, activation='softmax')
+                        ])
+
+[63]
+cnn.compile(optimizer='adam',
+            loss='sparse_categorical_crossentropy',
+            metrics=['accuracy'])
+[66]
+10m
+cnn.fit(X_train, y_train, epochs=10)
+# train the model
+#es = EarlyStopping(monitor='val_loss', mode='min', verbose=1) ## If there is no further improvment in training accurcay then we stop 
+                                                             ## training rather than completing all epocs. We also avoid overfitting with monitor='val_loss'
+
+# fit model
+#history = cnn.fit(X_train, y_train, epochs = 10, batch_size = 64, validation_split = 0.1, callbacks = [es])
+
+Epoch 1/10
+1563/1563 [==============================] - 63s 40ms/step - loss: 1.0671 - accuracy: 0.6256
+Epoch 2/10
+1563/1563 [==============================] - 69s 44ms/step - loss: 0.9435 - accuracy: 0.6707
+Epoch 3/10
+1563/1563 [==============================] - 60s 38ms/step - loss: 0.8595 - accuracy: 0.7004
+Epoch 4/10
+1563/1563 [==============================] - 65s 42ms/step - loss: 0.7969 - accuracy: 0.7241
+Epoch 5/10
+1563/1563 [==============================] - 67s 43ms/step - loss: 0.7413 - accuracy: 0.7425
+Epoch 6/10
+1563/1563 [==============================] - 70s 45ms/step - loss: 0.6904 - accuracy: 0.7608
+Epoch 7/10
+1563/1563 [==============================] - 63s 40ms/step - loss: 0.6420 - accuracy: 0.7778
+Epoch 8/10
+1563/1563 [==============================] - 60s 38ms/step - loss: 0.5999 - accuracy: 0.7896
+Epoch 9/10
+1563/1563 [==============================] - 60s 38ms/step - loss: 0.5629 - accuracy: 0.8031
+Epoch 10/10
+1563/1563 [==============================] - 59s 38ms/step - loss: 0.5269 - accuracy: 0.8146
+<keras.callbacks.History at 0x7f8fb8671190>
+[67]
+4s
+cnn.evaluate(X_test,y_test)
+313/313 [==============================] - 4s 12ms/step - loss: 0.9596 - accuracy: 0.7057
+[0.9595692157745361, 0.7056999802589417]
+[68]
+y_pred = cnn.predict(X_test) 
+y_pred[:5] ## this will give probability distribution, so to check which class it belongs, we use argmax function. 
+           ## 1 image will have each class probability associated.
+array([[6.74455368e-04, 3.98240547e-04, 4.05521016e-04, 9.74356592e-01,
+        5.24150254e-03, 1.10384533e-02, 2.28451402e-03, 1.92345833e-05,
+        5.30408137e-03, 2.77412211e-04],
+       [1.41203101e-03, 5.63577563e-02, 1.80784753e-07, 3.67268127e-09,
+        9.02399128e-11, 3.50055818e-11, 5.45689216e-10, 5.69707267e-11,
+        9.42218065e-01, 1.19454744e-05],
+       [3.09539232e-02, 1.69982523e-01, 3.48720096e-05, 4.05621431e-05,
+        1.32132454e-05, 4.39720679e-06, 3.94578080e-07, 2.86392551e-05,
+        7.94241726e-01, 4.69981274e-03],
+       [5.47737241e-01, 1.72173997e-04, 4.95879129e-02, 8.74319994e-06,
+        9.05270790e-05, 1.54547493e-07, 2.10064274e-04, 3.31371234e-06,
+        4.01532471e-01, 6.57391851e-04],
+       [1.05806305e-06, 1.34935260e-06, 1.31111825e-03, 6.38100728e-02,
+        1.04028195e-01, 2.48389959e-04, 8.30587089e-01, 1.21060668e-06,
+        1.13657507e-05, 1.08714836e-07]], dtype=float32)
+[72]
+0s
+y_classes = [np.argmax(element) for element in y_pred]
+y_classes[:5]
+[3, 8, 8, 0, 6]
+[69]
+0s
+y_test[:5]
+array([[3],
+       [8],
+       [8],
+       [0],
+       [6]], dtype=uint8)
+[79]
+0s
+plot_sample(X_test,y_test,3)
+
+[80]
+0s
+classes[y_classes[3]]
+
+[ ]
